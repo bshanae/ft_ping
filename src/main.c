@@ -15,7 +15,12 @@ struct ft_ping_data data;
 
 void alarm_handler(int _)
 {
+#ifdef IPv6
+	ipv6_send_packet();
+#else
 	ipv4_send_packet();
+#endif
+
 	alarm(1);
 }
 
@@ -60,7 +65,11 @@ int main(int argc, char **argv)
 	struct addrinfo hints;
 	ft_bzero(&hints, sizeof(struct addrinfo));
 	hints.ai_flags = AI_CANONNAME;
+#ifdef IPv6
+	hints.ai_family = AF_INET6;
+#else
 	hints.ai_family = AF_INET;
+#endif
 	hints.ai_socktype = SOCK_RAW;
 
 	if (getaddrinfo(host_name, NULL, &hints, &data.host_address) != 0)
@@ -68,12 +77,21 @@ int main(int argc, char **argv)
 
 	// Calculate host address string.
 
+#ifdef IPv6
+	inet_ntop(
+		AF_INET6,
+		&((struct sockaddr_in6 *)data.host_address->ai_addr)->sin6_addr,
+		data.host_address_str,
+		sizeof(data.host_address_str)
+	);
+#else
 	inet_ntop(
 		AF_INET,
 		&((struct sockaddr_in *)data.host_address->ai_addr)->sin_addr,
 		data.host_address_str,
 		sizeof(data.host_address_str)
 	);
+#endif
 
 	// Set initial values for rtt statistics.
 
@@ -91,7 +109,12 @@ int main(int argc, char **argv)
 
 	// Open socket.
 
+#ifdef IPv6
+	data.socket = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+#else
 	data.socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+#endif
+
 	if (data.socket == -1)
 		exit_with_error("Can't open socket\n");
 
@@ -125,15 +148,17 @@ int main(int argc, char **argv)
 		int received_count = recvmsg(data.socket, &message_header, 0);
 		if (received_count == -1)
 		{
-			printf("%d\n", errno);
-
 			if (errno == EINTR)
 				continue;
 			else
 				exit(1);
 		}
 
+#ifdef IPv6
+		ipv6_process_packet(receive_buffer, received_count);
+#else
 		ipv4_process_packet(receive_buffer, received_count);
+#endif
 	}
 
 	return 0;

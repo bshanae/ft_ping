@@ -5,11 +5,14 @@
 #include <sys/time.h>
 #include <netinet/ip.h>
 
+#ifdef IPv6
+#include <netinet/ip6.h>
+#include <netinet/icmp6.h>
+#endif
+
 #define BUFFER_SIZE 128
 #define ICMP_LENGTH 8
 #define DATA_LENGTH 56
-
-#define FT_PING_IPV6 0
 
 #define MIN(a, b) (a) < (b) ? (a) : (b)
 #define MAX(a, b) (a) > (b) ? (a) : (b)
@@ -21,6 +24,11 @@ struct ft_ping_data
 	int instance_id;
 	int socket;
 	struct addrinfo *host_address;
+#ifdef IPv6
+	char host_address_str[INET6_ADDRSTRLEN];
+#else
+	char host_address_str[INET_ADDRSTRLEN];
+#endif
 	int sequence_id;
 
 	int sent_count;
@@ -29,18 +37,17 @@ struct ft_ping_data
 	double rtt_max;
 	double rtt_sum;
 	double rtt_sum_squared;
-
-#if !FT_PING_IPV6
-	char host_address_str[INET_ADDRSTRLEN];
-#else
-	char host_address_str[INET6_ADDRSTRLEN];
-#endif
 };
 
 extern struct ft_ping_data data;
 
+#ifdef IPv6
+void ipv6_send_packet();
+void ipv6_process_packet(char *ptr, size_t length);
+#else
 void ipv4_send_packet();
 void ipv4_process_packet(char *ptr, size_t length);
+#endif
 
 void exit_with_error(char *format, ...);
 void ft_bzero(void *str, size_t n);
