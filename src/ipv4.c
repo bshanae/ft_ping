@@ -70,7 +70,6 @@ void ipv4_process_packet(char *ptr, size_t length)
 			ip_header->ip_ttl,
 			rtt
 		);
-		fflush(stdout); // TODO FIX THIS
 
 		data.received_count++;
 		data.rtt_min = MIN(data.rtt_min, rtt);
