@@ -126,7 +126,6 @@ int main(int argc, char **argv)
 		if (received_count == -1)
 		{
 			printf("%d\n", errno);
-			fflush(stdout);
 
 			if (errno == EINTR)
 				continue;
