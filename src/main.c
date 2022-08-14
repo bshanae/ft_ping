@@ -49,6 +49,11 @@ void interrupt_handler(int _)
 
 int main(int argc, char **argv)
 {
+	// Check root rights.
+
+	if (geteuid() != 0)
+		exit_with_error("usage error: Ping should be executed with root privileges.\n");
+
 	// Parse arguments.
 
 	if (argc < 2)
