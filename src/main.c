@@ -33,7 +33,7 @@ void interrupt_handler(int _)
 	if (data.sent_count != 0)
 		percentage_lost = 100 - ((data.received_count * 100.0) / data.sent_count);
 
-	printf("-- %s ping statistics ---\n", data.host_address_str);
+	printf("--- %s ping statistics ---\n", data.host_address->ai_canonname ? data.host_address->ai_canonname : data.host_address_str);
 	printf("%u packets transmitted, %u packets received, %.2f%% packet loss\n", data.sent_count, data.received_count, percentage_lost);
 	if (data.sent_count != 0)
 		average = data.rtt_sum / data.sent_count;
@@ -49,17 +49,15 @@ void interrupt_handler(int _)
 
 int main(int argc, char **argv)
 {
+	// Parse arguments.
+
+	char *host_name;
+	parse_arguments(argc, argv, &host_name);
+
 	// Check root rights.
 
 	if (geteuid() != 0)
 		exit_with_error("usage error: Ping should be executed with root privileges.\n");
-
-	// Parse arguments.
-
-	if (argc < 2)
-		exit_with_error("usage error: Destination address required\n");
-
-	char *host_name = argv[1];
 
 	// Calculate instance ID.
 
@@ -78,7 +76,7 @@ int main(int argc, char **argv)
 	hints.ai_socktype = SOCK_RAW;
 
 	if (getaddrinfo(host_name, NULL, &hints, &data.host_address) != 0)
-		exit_with_error("%s: Name or service not known\n", host_name);
+		exit_with_error("ping: unknown host\n", host_name);
 
 	// Calculate host address string.
 

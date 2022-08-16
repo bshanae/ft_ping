@@ -1,6 +1,7 @@
 #ifndef FT_PING_H
 #define FT_PING_H
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <sys/time.h>
 #include <netinet/ip.h>
@@ -49,6 +50,7 @@ void ipv4_send_packet();
 void ipv4_process_packet(char *ptr, size_t length);
 #endif
 
+void parse_arguments(int argc, char **argv, char **host_name);
 void exit_with_error(char *format, ...);
 void ft_bzero(void *str, size_t n);
 void *ft_memset(void *str, int c, size_t n);
