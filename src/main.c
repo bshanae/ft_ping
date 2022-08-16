@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <netdb.h>
 #include <sys/uio.h>
-#include <arpa/inet.h>
 #include <errno.h>
 #include <math.h>
 #include <float.h>
@@ -33,7 +32,7 @@ void interrupt_handler(int _)
 	if (data.sent_count != 0)
 		percentage_lost = 100 - ((data.received_count * 100.0) / data.sent_count);
 
-	printf("--- %s ping statistics ---\n", data.host_address->ai_canonname ? data.host_address->ai_canonname : data.host_address_str);
+	printf("--- %s ping statistics ---\n", data.send_address->ai_canonname ? data.send_address->ai_canonname : data.send_address_str);
 	printf("%u packets transmitted, %u packets received, %.2f%% packet loss\n", data.sent_count, data.received_count, percentage_lost);
 	if (data.sent_count != 0)
 		average = data.rtt_sum / data.sent_count;
@@ -41,8 +40,6 @@ void interrupt_handler(int _)
 		standard_deviation = sqrt((data.rtt_sum_squared - (data.rtt_sum * data.rtt_sum) / data.received_count) / (data.received_count - 1));
 	if (data.received_count > 0)
 		printf("round-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", data.rtt_min, average, data.rtt_max, standard_deviation);
-
-	freeaddrinfo(data.host_address);
 
 	exit(0);
 }
@@ -75,25 +72,17 @@ int main(int argc, char **argv)
 #endif
 	hints.ai_socktype = SOCK_RAW;
 
-	if (getaddrinfo(host_name, NULL, &hints, &data.host_address) != 0)
+	if (getaddrinfo(host_name, NULL, &hints, &data.send_address) != 0)
+		exit_with_error("ping: unknown host\n", host_name);
+	if (getaddrinfo(host_name, NULL, &hints, &data.receive_address) != 0)
 		exit_with_error("ping: unknown host\n", host_name);
 
 	// Calculate host address string.
 
 #ifdef IPv6
-	inet_ntop(
-		AF_INET6,
-		&((struct sockaddr_in6 *)data.host_address->ai_addr)->sin6_addr,
-		data.host_address_str,
-		sizeof(data.host_address_str)
-	);
+	ipv6_ntop(data.send_address, data.send_address_str, sizeof(data.send_address_str));
 #else
-	inet_ntop(
-		AF_INET,
-		&((struct sockaddr_in *)data.host_address->ai_addr)->sin_addr,
-		data.host_address_str,
-		sizeof(data.host_address_str)
-	);
+	ipv4_ntop(data.send_address, data.send_address_str, sizeof(data.send_address_str));
 #endif
 
 	// Set initial values for rtt statistics.
@@ -105,8 +94,8 @@ int main(int argc, char **argv)
 
 	printf(
 		"PING %s (%s): %d data bytes\n",
-		data.host_address->ai_canonname ? data.host_address->ai_canonname : data.host_address_str,
-		data.host_address_str,
+		data.send_address->ai_canonname ? data.send_address->ai_canonname : data.send_address_str,
+		data.send_address_str,
 		DATA_LENGTH
 	);
 
@@ -141,6 +130,8 @@ int main(int argc, char **argv)
 	ft_bzero(&message_header, sizeof(struct msghdr));
 	io_buffer.iov_base = receive_buffer;
 	io_buffer.iov_len = sizeof(receive_buffer);
+	message_header.msg_name = data.receive_address->ai_addr;
+	message_header.msg_namelen = data.receive_address->ai_addrlen;
 	message_header.msg_iov = &io_buffer;
 	message_header.msg_iovlen = 1;
 	message_header.msg_control = control_buffer;

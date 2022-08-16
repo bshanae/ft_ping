@@ -2,10 +2,21 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
 
 #if IPv6
+void ipv6_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
+{
+	inet_ntop(
+		AF_INET6,
+		&((struct sockaddr_in6 *)address->ai_addr)->sin6_addr,
+		buffer,
+		buffer_size
+	);
+}
+
 void ipv6_send_packet()
 {
 	char send_buffer[BUFFER_SIZE];
@@ -23,8 +34,8 @@ void ipv6_send_packet()
 		send_buffer,
 		ICMP_LENGTH + DATA_LENGTH,
 		0,
-		data.host_address->ai_addr,
-		data.host_address->ai_addrlen
+		data.send_address->ai_addr,
+		data.send_address->ai_addrlen
 	);
 
 	if (sent != ICMP_LENGTH + DATA_LENGTH)
@@ -38,10 +49,12 @@ void ipv6_process_packet(char *ptr, size_t length)
 	if (length < 8)
 		exit_with_error("Unexpected ICMP header length: %d", length);
 
+	ipv6_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
+
 	struct icmp6_hdr *icmp6 = (struct icmp6_hdr *)ptr;
 	if (icmp6->icmp6_type == ICMP6_ECHO_REPLY)
 	{
-		if (icmp6->icmp6_id != data.instance_id)
+		if (icmp6->icmp6_id != data.instance_id && !data.flag_verbose)
 			return;
 		if (length < 16)
 			exit_with_error("Unexpected ICMP header length: %d", length);
@@ -57,9 +70,9 @@ void ipv6_process_packet(char *ptr, size_t length)
 		double rtt = time_diff.tv_sec * 1000.0 + time_diff.tv_usec / 1000.0;
 
 		printf(
-			"%lu bytes from %s: seq=%u, rtt=%.3f ms\n",
+			"%lu bytes from %s: icmp_seq=%u rtt=%.3f ms\n",
 			length,
-			data.host_address_str,
+			data.receive_address_str,
 			icmp6->icmp6_seq,
 			rtt
 		);
@@ -67,9 +80,9 @@ void ipv6_process_packet(char *ptr, size_t length)
 	else if (data.flag_verbose)
 	{
 		printf(
-			"  %ld bytes from %s: type = %d, code = %d\n",
+			"%ld bytes from %s: type = %d, code = %d\n",
 			length,
-			data.host_address_str,
+			data.receive_address_str,
 			icmp6->icmp6_type,
 			icmp6->icmp6_code
 		);

@@ -24,12 +24,10 @@ struct ft_ping_data
 
 	int instance_id;
 	int socket;
-	struct addrinfo *host_address;
-#ifdef IPv6
-	char host_address_str[INET6_ADDRSTRLEN];
-#else
-	char host_address_str[INET_ADDRSTRLEN];
-#endif
+	struct addrinfo *send_address;
+	char send_address_str[64];
+	struct addrinfo *receive_address;
+	char receive_address_str[64];
 	int sequence_id;
 
 	int sent_count;
@@ -43,9 +41,11 @@ struct ft_ping_data
 extern struct ft_ping_data data;
 
 #ifdef IPv6
+void ipv6_ntop(struct addrinfo *address, char *buffer, size_t buffer_size);
 void ipv6_send_packet();
 void ipv6_process_packet(char *ptr, size_t length);
 #else
+void ipv4_ntop(struct addrinfo *address, char *buffer, size_t buffer_size);
 void ipv4_send_packet();
 void ipv4_process_packet(char *ptr, size_t length);
 #endif

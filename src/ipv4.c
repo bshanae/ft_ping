@@ -3,9 +3,20 @@
 #include <stdio.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+
+void ipv4_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
+{
+	inet_ntop(
+		AF_INET,
+		&((struct sockaddr_in *)address->ai_addr)->sin_addr,
+		buffer,
+		buffer_size
+	);
+}
 
 void ipv4_send_packet()
 {
@@ -26,8 +37,8 @@ void ipv4_send_packet()
 		send_buffer,
 		ICMP_LENGTH + DATA_LENGTH,
 		0,
-		data.host_address->ai_addr,
-		data.host_address->ai_addrlen
+		data.send_address->ai_addr,
+		data.send_address->ai_addrlen
 	);
 
 	if (sent != ICMP_LENGTH + DATA_LENGTH)
@@ -46,9 +57,11 @@ void ipv4_process_packet(char *ptr, size_t length)
 	if (icmp_header_length < 8)
 		exit_with_error("Unexpected ICMP header length: %d", icmp_header_length);
 
+	ipv4_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
+
 	if (icmp->icmp_type == ICMP_ECHOREPLY)
 	{
-		if (icmp->icmp_id != data.instance_id)
+		if (icmp->icmp_id != data.instance_id && !data.flag_verbose)
 			return;
 		if (icmp_header_length < 16)
 			exit_with_error("Unexpected ICMP header length: %d", icmp_header_length);
@@ -63,9 +76,9 @@ void ipv4_process_packet(char *ptr, size_t length)
 
 		double rtt = time_diff.tv_sec * 1000.0 + time_diff.tv_usec / 1000.0;
 		printf(
-			"%lu bytes from %s: seq=%u, ttl=%d, rtt=%.3f ms\n",
+			"%lu bytes from %s: icmp_seq=%u ttl=%d rtt=%.3f ms\n",
 			icmp_header_length,
-			data.host_address_str,
+			data.receive_address_str,
 			icmp->icmp_seq,
 			ip_header->ip_ttl,
 			rtt
@@ -80,10 +93,11 @@ void ipv4_process_packet(char *ptr, size_t length)
 	else if (data.flag_verbose)
 	{
 		printf(
-			"  %lu bytes from %s: type = %d, code = %d\n",
+			"%lu bytes from %s: type = %d, code = %d\n",
 			icmp_header_length,
-			data.host_address_str,
-			icmp->icmp_type, icmp->icmp_code
+			data.receive_address_str,
+			icmp->icmp_type,
+			icmp->icmp_code
 		);
 	}
 }
