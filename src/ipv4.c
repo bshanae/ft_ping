@@ -1,4 +1,5 @@
 #include "ft_ping.h"
+#ifndef IPv6
 
 #include <stdio.h>
 #include <netinet/ip.h>
@@ -8,7 +9,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
-void ipv4_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
+void address_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
 {
 	inet_ntop(
 		AF_INET,
@@ -18,7 +19,7 @@ void ipv4_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
 	);
 }
 
-void ipv4_send_packet()
+void send_packet()
 {
 	char send_buffer[BUFFER_SIZE];
 	ft_bzero(send_buffer, ICMP_LENGTH + DATA_LENGTH);
@@ -47,7 +48,7 @@ void ipv4_send_packet()
 	data.sent_count++;
 }
 
-void ipv4_process_packet(char *ptr, size_t length)
+void process_packet(char *ptr, size_t length)
 {
 	struct ip *ip_header = (struct ip *) ptr;
 	int ip_header_length = ip_header->ip_hl * 4;
@@ -57,7 +58,7 @@ void ipv4_process_packet(char *ptr, size_t length)
 	if (icmp_header_length < 8)
 		exit_with_error("Unexpected ICMP header length: %d", icmp_header_length);
 
-	ipv4_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
+	address_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
 
 	if (icmp->icmp_type == ICMP_ECHOREPLY)
 	{
@@ -101,3 +102,4 @@ void ipv4_process_packet(char *ptr, size_t length)
 		);
 	}
 }
+#endif

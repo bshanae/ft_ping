@@ -1,13 +1,14 @@
 #include "ft_ping.h"
+#ifdef IPv6
 
 #include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <netinet/icmp6.h>
 
-#if IPv6
-void ipv6_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
+void address_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
 {
 	inet_ntop(
 		AF_INET6,
@@ -17,7 +18,7 @@ void ipv6_ntop(struct addrinfo *address, char *buffer, size_t buffer_size)
 	);
 }
 
-void ipv6_send_packet()
+void send_packet()
 {
 	char send_buffer[BUFFER_SIZE];
 	ft_bzero(send_buffer, ICMP_LENGTH + DATA_LENGTH);
@@ -44,12 +45,12 @@ void ipv6_send_packet()
 	data.sent_count++;
 }
 
-void ipv6_process_packet(char *ptr, size_t length)
+void process_packet(char *ptr, size_t length)
 {
 	if (length < 8)
 		exit_with_error("Unexpected ICMP header length: %d", length);
 
-	ipv6_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
+	address_ntop(data.receive_address, data.receive_address_str, sizeof(data.receive_address_str));
 
 	struct icmp6_hdr *icmp6 = (struct icmp6_hdr *)ptr;
 	if (icmp6->icmp6_type == ICMP6_ECHO_REPLY)

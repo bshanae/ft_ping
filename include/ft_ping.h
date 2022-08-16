@@ -6,11 +6,6 @@
 #include <sys/time.h>
 #include <netinet/ip.h>
 
-#ifdef IPv6
-#include <netinet/ip6.h>
-#include <netinet/icmp6.h>
-#endif
-
 #define BUFFER_SIZE 128
 #define ICMP_LENGTH 8
 #define DATA_LENGTH 56
@@ -40,15 +35,9 @@ struct ft_ping_data
 
 extern struct ft_ping_data data;
 
-#ifdef IPv6
-void ipv6_ntop(struct addrinfo *address, char *buffer, size_t buffer_size);
-void ipv6_send_packet();
-void ipv6_process_packet(char *ptr, size_t length);
-#else
-void ipv4_ntop(struct addrinfo *address, char *buffer, size_t buffer_size);
-void ipv4_send_packet();
-void ipv4_process_packet(char *ptr, size_t length);
-#endif
+void address_ntop(struct addrinfo *address, char *buffer, size_t buffer_size);
+void send_packet();
+void process_packet(char *ptr, size_t length);
 
 void parse_arguments(int argc, char **argv, char **host_name);
 void exit_with_error(char *format, ...);

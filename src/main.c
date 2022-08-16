@@ -14,12 +14,7 @@ struct ft_ping_data data;
 
 void alarm_handler(int _)
 {
-#ifdef IPv6
-	ipv6_send_packet();
-#else
-	ipv4_send_packet();
-#endif
-
+	send_packet();
 	alarm(1);
 }
 
@@ -79,11 +74,7 @@ int main(int argc, char **argv)
 
 	// Calculate host address string.
 
-#ifdef IPv6
-	ipv6_ntop(data.send_address, data.send_address_str, sizeof(data.send_address_str));
-#else
-	ipv4_ntop(data.send_address, data.send_address_str, sizeof(data.send_address_str));
-#endif
+	address_ntop(data.send_address, data.send_address_str, sizeof(data.send_address_str));
 
 	// Set initial values for rtt statistics.
 
@@ -148,11 +139,7 @@ int main(int argc, char **argv)
 				exit(1);
 		}
 
-#ifdef IPv6
-		ipv6_process_packet(receive_buffer, received_count);
-#else
-		ipv4_process_packet(receive_buffer, received_count);
-#endif
+		process_packet(receive_buffer, received_count);
 	}
 
 	return 0;
