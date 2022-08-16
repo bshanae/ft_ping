@@ -1,13 +1,13 @@
 # ft_ping
 Implementation of system tool 'ping'. Sends ICMP echo request to given host, displays RTT for each response.
 
-## build
+## Build
 
 ```
 make
 ```
 
-## usage
+## Usage
 
 Ping using IPv4 protocol:
 ```
