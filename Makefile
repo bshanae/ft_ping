@@ -47,14 +47,16 @@ $(OBJ_DIR_V6):
 
 clean:
 	${call LOG,Deleting objects}
-	$(SILENT) rm -rf $(OBJ_DIR)
+	$(SILENT) rm -rf $(OBJ_DIR_V4)
+	$(SILENT) rm -rf $(OBJ_DIR_V6)
 	${call LOG,Cleaning libft}
 	$(SILENT) make -C $(LIBFT_DIR) clean
 
-fclean:
+fclean: clean
 	${call LOG,Deleting objects}
 	$(SILENT) rm -rf $(OBJ_DIR)
-	${call LOG,Deleting executable}
+	${call LOG,Deleting executables}
 	$(SILENT) rm -f $(EXE_V4)
+	$(SILENT) rm -f $(EXE_V6)
 
 re: fclean all
